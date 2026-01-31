@@ -1,0 +1,61 @@
+:root {
+  /* Core Colors - Cyberpunk Industrial */
+  --bg-dark: #0a0b10;
+  --bg-panel: #14161f;
+  --text-primary: #e0e6ed;
+  --text-secondary: #94a3b8;
+  
+  /* Brand - Neon Accents */
+  --accent-primary: #00f3ff; /* Cyan Electric */
+  --accent-secondary: #7000ff; /* Purple Neon */
+  --status-success: #00ff9d;
+  --status-error: #ff0055;
+  --scan-line: rgba(0, 243, 255, 0.5);
+
+  /* Spacing & Layout */
+  --mobile-width: 480px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  
+  /* Typography */
+  --font-mono: 'Courier New', Courier, monospace;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Utilities */
+.container {
+  max-width: var(--mobile-width);
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--bg-panel);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+  border: none;
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(0, 243, 255, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
