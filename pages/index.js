@@ -1,121 +1,99 @@
-import { useState, useEffect } from 'react';
-import Layout from '@/components/Layout';
-import CameraCapture from '@/components/CameraCapture';
-import AnalysisView from '@/components/AnalysisView';
-import { analyzeImageMock } from '@/utils/mockAIService';
+import React, { useState } from 'react';
+import Head from 'next/head';
+import { analyzeMeterImage } from '../utils/mockAIService';
+import CameraCapture from '../components/CameraCapture';
+import AnalysisView from '../components/AnalysisView';
 
 export default function Home() {
-    const [analyzing, setAnalyzing] = useState(false);
-    const [statusMsg, setStatusMsg] = useState('');
-    const [result, setResult] = useState(null);
-    const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
-    // Load history on mount
-    useEffect(() => {
-        const stored = localStorage.getItem('antigravity_history');
-        if (stored) setHistory(JSON.parse(stored));
-    }, []);
+  const handleCapture = async (file) => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
 
-    const handleCapture = async (file, previewUrl) => {
-        setAnalyzing(true);
-        setResult(null); // Clear previous
+    // Paso 1: Simular carga
+    setStatus('Procesando imagen con IA...');
+    
+    const response = await analyzeMeterImage(file);
 
-        try {
-            // Simulate AI process
-            const csvLine = await analyzeImageMock(previewUrl, (msg) => {
-                setStatusMsg(msg);
-            });
+    if (response.success) {
+      setResult(response);
+      setStatus('¡Escaneo exitoso!');
+    } else {
+      setError(response.error);
+    }
+    setLoading(false);
+  };
 
-            setResult(csvLine);
-            setStatusMsg(''); // Clear status on success
+  const reset = () => {
+    setResult(null);
+    setError(null);
+    setStatus('');
+  };
 
-            // Save to history
-            const newEntry = {
-                id: `ANT-${Date.now()}`,
-                timestamp: new Date().toISOString(),
-                raw: csvLine,
-                // In a real app we'd save the image, here we skip it to save localstorage space
-            };
-            const updatedHistory = [newEntry, ...history];
-            setHistory(updatedHistory);
-            localStorage.setItem('antigravity_history', JSON.stringify(updatedHistory));
+  return (
+    <div className="container">
+      <Head>
+        <title>Antigravity | Vision Engine</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+      </Head>
 
-        } catch (error) {
-            console.error(error);
-            setStatusMsg('ERROR: FALLO_ANALISIS');
-        } finally {
-            setAnalyzing(false);
+      <main>
+        <header className="header">
+          <h1>ANTIGRAVITY</h1>
+          <p className="subtitle">METER READER AI V1.0</p>
+        </header>
+
+        {!result && !loading && !error && (
+          <div className="capture-section">
+            <CameraCapture onCapture={handleCapture} />
+          </div>
+        )}
+
+        {loading && (
+          <div className="loading-zone">
+            <div className="scanner-animation"></div>
+            <p className="loading-text">{status}</p>
+          </div>
+        )}
+
+        {result && (
+          <AnalysisView data={result.data} csv={result.csv} onReset={reset} />
+        )}
+
+        {error && (
+          <div className="error-card">
+            <p>{error}</p>
+            <button onClick={reset}>Reintentar</button>
+          </div>
+        )}
+      </main>
+
+      <style jsx global>{`
+        :root {
+          --neon: #00f3ff;
+          --bg: #0a0a0b;
         }
-    };
-
-    const handleReset = () => {
-        setResult(null);
-        setStatusMsg('');
-        setAnalyzing(false);
-    };
-
-    return (
-        <Layout>
-            <header style={{ padding: '2rem', textAlign: 'center' }}>
-                <h1 style={{
-                    margin: 0,
-                    letterSpacing: '4px',
-                    borderBottom: '2px solid var(--accent-primary)',
-                    display: 'inline-block',
-                    paddingBottom: '0.5rem'
-                }}>
-                    ANTIGRAVITY
-                </h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                    VISION ENGINE PROTOCOL
-                </p>
-            </header>
-
-            <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-
-                {!result && !analyzing && (
-                    <CameraCapture onCapture={handleCapture} />
-                )}
-
-                {(result || analyzing) && (
-                    <AnalysisView
-                        data={result}
-                        status={statusMsg}
-                        onReset={handleReset}
-                    />
-                )}
-
-                {/* Mini History view */}
-                {!result && !analyzing && history.length > 0 && (
-                    <div style={{ marginTop: '2rem', width: '100%', padding: '0 2rem' }}>
-                        <h3 style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>RECENT SCANS</h3>
-                        {history.slice(0, 3).map(item => (
-                            <div key={item.id} style={{
-                                background: '#111',
-                                padding: '0.8rem',
-                                marginBottom: '0.5rem',
-                                borderRadius: '8px',
-                                fontSize: '0.7rem',
-                                color: '#888',
-                                borderLeft: '2px solid #333'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{item.id}</span>
-                                    <span>{item.timestamp.split('T')[1].substr(0, 5)}</span>
-                                </div>
-                                <div style={{ color: '#fff', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {item.raw.split(',')[3]}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-            </main>
-
-            <footer style={{ padding: '2rem', textAlign: 'center', fontSize: '0.7rem', color: '#444' }}>
-                SYSTEM_READY // WAITING_INPUT
-            </footer>
-        </Layout>
-    );
+        body {
+          background-color: var(--bg);
+          color: white;
+          font-family: 'Inter', sans-serif;
+          margin: 0;
+        }
+        .header { text-align: center; padding: 2rem 0; border-bottom: 1px solid #333; }
+        h1 { font-weight: 900; letter-spacing: 5px; color: var(--neon); margin: 0; }
+        .subtitle { font-size: 0.7rem; opacity: 0.6; }
+        .loading-zone { display: flex; flex-direction: column; align-items: center; padding: 4rem 2rem; }
+        .scanner-animation { 
+          width: 200px; height: 2px; background: var(--neon); 
+          box-shadow: 0 0 15px var(--neon); animation: scan 2s infinite; 
+        }
+        @keyframes scan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(100px); } }
+      `}</style>
+    </div>
+  );
 }
